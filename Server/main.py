@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from typing import Dict
+from typing import Dict, List
 import gc
 import json
 from pydantic import BaseModel
@@ -29,15 +29,9 @@ async def create(aluno: Alunos):
         if isinstance(obj, Alunos):
             list_data.append(obj.__dict__)
             
-    try:
-        file_out = open("dados.json", "xt")
-        json.dump(list_data, file_out, indent= 4)
-        file_out.close()
-
-    except:
-        file_out= open("dados.json", "at")
-        json.dump(list_data, file_out, indent= 4)
-        file_out.close()
+    file_out = open("dados.json", "w")
+    json.dump(list_data, file_out, indent= 4)
+    file_out.close()
 
 @app.get("/getAll/")
 async def getAll():
@@ -57,3 +51,21 @@ async def getById(alunoId):
             
             else:
                 return {"message": "Aluno não encontrado"}
+            
+@app.get("/getNotas/{nomeDisciplina}")
+async def getNotasByName(nomeDisciplina):
+    with open("dados.json") as file:
+        alunos_info= json.load(file)
+
+    lista= []
+
+    for aluno in alunos_info:
+        notas_aluno= aluno["notas"]
+
+        lista_alunos= [aluno["nome"], notas_aluno[f"{nomeDisciplina}"]]
+        
+        lista.append(lista_alunos)
+        
+    lista.sort(key= lambda x: x[1])
+
+    return lista

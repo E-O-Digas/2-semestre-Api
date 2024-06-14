@@ -1,0 +1,26 @@
+[
+    {
+        "nome": "Djalma",
+        "notas": {
+            "C": 1.0,
+            "D": 6.0
+        },
+        "id": "1234awsdawsd"
+    },
+    {
+        "nome": "Diogo",
+        "notas": {
+            "C": 1.0,
+            "D": 8.0
+        },
+        "id": "1234awsdawsd"
+    },
+    {
+        "nome": "Fabio",
+        "notas": {
+            "C": 1.0,
+            "D": 4.0
+        },
+        "id": "1234awsdawsd"
+    }
+]
