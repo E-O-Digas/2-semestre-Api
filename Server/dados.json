@@ -1,26 +1,34 @@
 [
     {
-        "nome": "Djalma",
+        "id": "7ab528c1-10b5-41f5-82e6-22ff846de27c",
+        "nome": "Allyson",
         "notas": {
             "C": 1.0,
-            "D": 6.0
-        },
-        "id": "1234awsdawsd"
+            "D": 2.0
+        }
     },
     {
+        "id": "37684fa8-8bb8-46ec-af52-b1d6814a5b69",
         "nome": "Diogo",
         "notas": {
             "C": 1.0,
-            "D": 8.0
-        },
-        "id": "1234awsdawsd"
+            "D": 4.0
+        }
     },
     {
-        "nome": "Fabio",
+        "id": "13547b8b-42dc-4c74-8496-9b42b84c72a6",
+        "nome": "Rogerio",
         "notas": {
             "C": 1.0,
-            "D": 4.0
-        },
-        "id": "1234awsdawsd"
+            "D": 6.0
+        }
+    },
+    {
+        "id": "f66dc3da-03dd-4a11-a7ae-6e0a7b527e18",
+        "nome": "Diego",
+        "notas": {
+            "C": 1.0,
+            "D": 8.0
+        }
     }
 ]

@@ -1,61 +1,111 @@
 from fastapi import FastAPI
-from typing import Dict, List
-import gc
-import json
+from typing import Dict
+import json, uuid
 from pydantic import BaseModel
 
 class Alunos(BaseModel):
     nome: str
     notas: Dict[str, float]
-    id: str
 
-app = FastAPI()
+app = FastAPI()  #inicia a instancia APP, que contem as dependencias necessarias para rodar a api
 
-alunos_lista = []
+#função assíncrona que carrega os dados do arquivo dados.json. Caso ele esteja vazio, retorna falso
+async def load_data(): 
+    try:
+        with open("dados.json", "r") as file:
+            return json.load(file)
+        
+    except:
+        return []
 
+#função sincrona que é utilizada para salvar dados em formato json no arquivo dados.json
+def save_data(lista_alunos):
+    with open("dados.json", "w") as file:
+        json.dump(lista_alunos, file, indent= 4)
+
+
+#função assíncrona utilizada para validar as notas dos alunos. Caso as notas estejam dentro do intervalo estipulado, retorna true, caso não estejam, retorna false
+async def vld_notas(aluno):
+    for nota in aluno.notas.values():
+        if nota >= 0 and nota <=10:
+            return True
+        
+        else:
+            return False
+        
+#Função assíncrona utilizada para validar se o aluno ja foi cadastrado no arquivo dados.json, se utilizando da variável user_exist. 
+#Caso o usuario ja esteja no arquivo a variavel user_exist passa a valer True, caso contrario a variavel sequer é criada, se a variavel for True, 
+#isso quer dizer que o usuario existe então o usuario não pode ser cadastrado, por isso a def vld_aluno retornará False.
+async def vld_aluno(aluno):
+    alunos= await getAll()
+
+    for qtd_aluno in range(0, len(alunos)):
+        if str(aluno.nome) == str(alunos[qtd_aluno]["nome"]):
+            user_exist= True
+
+    try:
+        if user_exist:
+            return False
+        
+        else:
+            return True
+        
+    except:
+        return True
+    
+
+#Função assíncrona responsavel por chamar as funções de validação e, apos as validações necessárias, cria o objeto Alunos no arquivo dados.json
 @app.post("/create/")
 async def create(aluno: Alunos):
-    for nota in aluno.notas.values():
-        if nota >= 0 and nota <= 10:
-            aluno.notas= {materia : round(nota,1) for materia, nota in aluno.notas.items()}
+    id= str(uuid.uuid4())
+
+    lista_alunos= await getAll()
+
+    if await vld_aluno(aluno):
+        if await vld_notas(aluno):
+            notas= {materia : round(nota,1) for materia, nota in aluno.notas.items()}
+                
+            novo_aluno= {
+                "id": id,
+                "nome": aluno.nome,
+                "notas": notas
+            }
+
+            lista_alunos.append(novo_aluno)
+
+            save_data(lista_alunos)
            
-            alunos_lista.append(aluno)
         else:
-            return {"message": "Notas inválidas"}
-            
-    list_data= []
+            return {"message": "Notas inválidas, tente novamente."}
+        
+    else:
+        return {"message": "Aluno ja cadastrado."}
 
-    for obj in gc.get_objects():
-        if isinstance(obj, Alunos):
-            list_data.append(obj.__dict__)
-            
-    file_out = open("dados.json", "w")
-    json.dump(list_data, file_out, indent= 4)
-    file_out.close()
 
+#Função assíncrona que se utiliza da função assíncrona load_data para simplemente pegar todos os usuários que tem no arquivo dados.json
 @app.get("/getAll/")
 async def getAll():
-    with open("dados.json") as file:
-        alunos_info= json.load(file)
+    return await load_data()
 
-    return alunos_info
 
+#Função assíncrona que se utiliza da função assíncrona getAll() e de um parâmetro, alunoId, para buscar, por meio de um loop, um aluno específico com o id especificado no parâmetro.
 @app.get("/getById/{alunoId}")
 async def getById(alunoId):
-    with open("dados.json") as file:
-        alunos_info= json.load(file)
+    alunos_info= await getAll()
 
-        for aluno in alunos_info:
-            if aluno["id"] == alunoId:
-                return aluno["nome"], aluno["notas"]
+    for aluno in alunos_info:
+        if aluno["id"] == alunoId:
+            return aluno["nome"], aluno["notas"]
             
-            else:
-                return {"message": "Aluno não encontrado"}
-            
+        else:
+            return {"message": "Aluno não encontrado"}
+
+#Função assíncrona que se utiliza da função assíncrona getAll() e de um parâmetro, nomeDisciplina, para buscar, por meio de um loop, 
+#todas as notas de uma matéria e armazena-as em uma lista para ordenalas em ordem crescente. Retorna um dicionário com o nome da 
+#disciplina desejada como chave, e uma lista, ordenada de forma crescente, como valor.
 @app.get("/getNotas/{nomeDisciplina}")
 async def getNotasByName(nomeDisciplina):
-    with open("dados.json") as file:
-        alunos_info= json.load(file)
+    alunos_info= await getAll()
 
     lista= []
 
@@ -68,4 +118,4 @@ async def getNotasByName(nomeDisciplina):
         
     lista.sort(key= lambda x: x[1])
 
-    return lista
+    return {nomeDisciplina: lista}
