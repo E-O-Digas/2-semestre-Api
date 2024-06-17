@@ -173,5 +173,3 @@ async def delete_alunos_sem_notas():
     save_data(alunos)
 
     return {"Message": "Alunos sem notas removidos com sucesso"}
-            
-
