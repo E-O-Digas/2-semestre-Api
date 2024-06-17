@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from typing import Dict
+import numpy as np
 import json, uuid
 from pydantic import BaseModel
 
@@ -119,3 +120,58 @@ async def getNotasByName(nomeDisciplina):
     lista.sort(key= lambda x: x[1])
 
     return {nomeDisciplina: lista}
+
+#Função assíncrona que pega as estatisticas da matéria C
+@app.get("/getStats/{nomeDisciplina}")
+async def getStats(nomeDisciplina):
+    alunos= await getAll()
+
+    #Primeiro ela guarda todas as notas da matéria C de todos os alunos registrados
+    notas = [aluno["notas"].get(nomeDisciplina) for aluno in alunos if f"{nomeDisciplina}" in aluno["notas"]]
+
+    #Depois ela utiliza as funções do numpy para calcular a media, mediana e desvio padrao das notas_C
+    media = np.mean(notas)
+    mediana = np.median(notas)
+    desvio_padrao = np.std(notas)
+
+    #Retorno os resultados
+    return media, mediana, desvio_padrao
+
+#Função assíncrona para pegar apenas os alunos que foram reprovados por tirar menos de 6
+@app.get("/GetReprovados/")
+async def getReprovados():
+    alunos= await getAll()
+
+    #lista para guardar os alunos
+    resultado = []
+
+    for aluno in alunos:
+        #pegar as notas dos alunos
+        notas = aluno.get("notas", {}) 
+
+        if notas:
+            #se a nota não é nula e é menor do que 6 o aluno é inserido na lista
+            if any(nota is not None and nota < 6 for nota in notas.values()):
+
+                resultado.append(aluno)
+
+    return resultado
+
+
+@app.delete("/DeleteAlunosSemNotas")
+async def delete_alunos_sem_notas():
+    #faz com que alunos possa ser acessado pela função
+    alunos= await getAll()
+
+    #guarda os alunos que tem alguma nota no sistema
+    alunos_com_notas = [aluno for aluno in alunos if aluno.get("notas")]
+
+    #coloca apenas os alunos com notas em alunos
+    alunos = alunos_com_notas
+
+    #sobrepoe com os dados no sistema
+    save_data(alunos)
+
+    return {"Message": "Alunos sem notas removidos com sucesso"}
+            
+
