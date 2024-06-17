@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 class Alunos(BaseModel):
     nome: str
-    notas: Dict[str, float]
+    notas: Dict[str, float] | None= None
 
 app = FastAPI()  #inicia a instancia APP, que contem as dependencias necessarias para rodar a api
 
@@ -27,13 +27,17 @@ def save_data(lista_alunos):
 
 #função assíncrona utilizada para validar as notas dos alunos. Caso as notas estejam dentro do intervalo estipulado, retorna true, caso não estejam, retorna false
 async def vld_notas(aluno):
-    for nota in aluno.notas.values():
-        if nota >= 0 and nota <=10:
-            return True
-        
-        else:
-            return False
-        
+    if aluno.notas:
+        for nota in aluno.notas.values():
+            if nota >= 0 and nota <=10:
+                return True
+            
+            else:
+                return False
+    else:
+        aluno.notas= {}
+        return True
+            
 #Função assíncrona utilizada para validar se o aluno ja foi cadastrado no arquivo dados.json, se utilizando da variável user_exist. 
 #Caso o usuario ja esteja no arquivo a variavel user_exist passa a valer True, caso contrario a variavel sequer é criada, se a variavel for True, 
 #isso quer dizer que o usuario existe então o usuario não pode ser cadastrado, por isso a def vld_aluno retornará False.
@@ -126,33 +130,28 @@ async def getNotasByName(nomeDisciplina):
 async def getStats(nomeDisciplina):
     alunos= await getAll()
 
-    #Primeiro ela guarda todas as notas da matéria C de todos os alunos registrados
-    notas = [aluno["notas"].get(nomeDisciplina) for aluno in alunos if f"{nomeDisciplina}" in aluno["notas"]]
+    notas = [aluno["notas"].get(nomeDisciplina) for aluno in alunos if f"{nomeDisciplina}" in aluno["notas"]] #Primeiro ela guarda todas as notas da matéria C de todos os alunos registrados
+
 
     #Depois ela utiliza as funções do numpy para calcular a media, mediana e desvio padrao das notas_C
     media = np.mean(notas)
     mediana = np.median(notas)
     desvio_padrao = np.std(notas)
 
-    #Retorno os resultados
-    return media, mediana, desvio_padrao
+    return media, mediana, desvio_padrao #Retorno os resultados
 
 #Função assíncrona para pegar apenas os alunos que foram reprovados por tirar menos de 6
 @app.get("/GetReprovados/")
 async def getReprovados():
     alunos= await getAll()
 
-    #lista para guardar os alunos
-    resultado = []
+    resultado = [] #lista para guardar os alunos
 
     for aluno in alunos:
-        #pegar as notas dos alunos
-        notas = aluno.get("notas", {}) 
+        notas = aluno.get("notas", {}) #pegar as notas dos alunos
 
         if notas:
-            #se a nota não é nula e é menor do que 6 o aluno é inserido na lista
-            if any(nota is not None and nota < 6 for nota in notas.values()):
-
+            if any(nota is not None and nota < 6 for nota in notas.values()):  #se a nota não é nula e é menor do que 6 o aluno é inserido na lista
                 resultado.append(aluno)
 
     return resultado
